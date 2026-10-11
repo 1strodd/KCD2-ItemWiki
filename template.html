@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KCD2 — предметы и хэши</title>
+<style>
+  :root { --bg:#14120f; --card:#211e19; --card2:#2a261f; --line:#3a352c; --text:#e8e0cf; --mute:#9a9078; --acc:#d6a640; --ok:#6bbf6b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui,Segoe UI,Roboto,sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:10px 16px 0; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; max-width:1400px; margin:0 auto 8px; }
+  h1 { font-size:18px; margin:0 12px 0 0; color:var(--acc); }
+  input[type=search], select { background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font-size:15px; }
+  input[type=search] { flex:1; min-width:220px; }
+  .stat { color:var(--mute); font-size:13px; }
+  .chip { display:flex; gap:6px; align-items:center; color:var(--mute); font-size:13px; cursor:pointer; user-select:none; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--card); padding:7px 12px; }
+  .seg button.on { background:var(--acc); color:#1a150a; font-weight:600; }
+  .tabs { display:flex; gap:2px; max-width:1400px; margin:0 auto; }
+  .tab { background:none; border:0; border-bottom:3px solid transparent; border-radius:0; color:var(--mute); padding:8px 16px; font-size:15px; }
+  .tab.on { color:var(--acc); border-color:var(--acc); }
+  .tab .n { font-size:12px; color:var(--mute); margin-left:4px; }
+  main { max-width:1400px; margin:0 auto; padding:14px 16px 90px; }
+  .hint { color:var(--mute); font-size:13px; margin:0 0 10px; }
+
+  .group { background:var(--card); border:1px solid var(--line); border-radius:8px; margin-bottom:10px; }
+  .gh { display:flex; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .gh b { font-size:16px; }
+  .gh .cnt { color:var(--mute); font-size:13px; }
+  .gh .right { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .tag { font-size:12px; color:var(--mute); border:1px solid var(--line); border-radius:10px; padding:1px 8px; text-decoration:none; }
+  .sub { padding:6px 12px 2px; color:var(--acc); font-size:13px; border-top:1px solid var(--line); background:var(--card2); }
+  .sub:first-of-type { border-top:0; }
+
+  .variants { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); }
+  .v { display:flex; gap:10px; align-items:center; padding:8px 12px; border-top:1px solid var(--line); cursor:pointer; position:relative; }
+  .v:hover { background:#2f2a21; }
+  .v.issel { box-shadow: inset 3px 0 0 var(--acc); background:#2b2617; }
+  .ic { width:52px; height:52px; object-fit:contain; background:#0e0d0b; border-radius:6px; flex:none; cursor:zoom-in; }
+  .ic.miss { opacity:.25; }
+  .noimg { display:flex; align-items:center; justify-content:center; color:var(--mute); }
+  .info { min-width:0; flex:1; }
+  .nm { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lab { font-size:13px; color:var(--text); }
+  .lab .uid { color:var(--mute); font-size:11.5px; margin-left:4px; }
+  .hash { font:12.5px ui-monospace,Consolas,monospace; color:var(--acc); word-break:break-all; }
+  button { background:#2d281f; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px; flex:none; }
+  button:hover { border-color:var(--acc); }
+  .ibtn { padding:4px 7px; font-size:16px; line-height:1; color:var(--mute); }
+  .ibtn.star.on { color:var(--acc); border-color:var(--acc); }
+  .ibtn.chk.on { color:#1a150a; background:var(--acc); border-color:var(--acc); }
+  .btns { display:flex; flex-direction:column; gap:4px; }
+
+  .tiles { display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px; }
+  .tile { width:116px; background:var(--card2); border:1px solid var(--line); border-radius:8px; padding:8px 6px 6px; text-align:center; cursor:pointer; position:relative; }
+  .tile:hover { border-color:var(--acc); }
+  .tile.issel { border-color:var(--acc); background:#2b2617; }
+  .tile .ic { width:72px; height:72px; margin:0 auto; display:block; }
+  .tile .tl { font-size:12.5px; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tile .tn { font-size:11px; color:var(--mute); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tile .ibtn { position:absolute; top:4px; opacity:.0; }
+  .tile .star { left:4px; } .tile .chk { right:4px; }
+  .tile:hover .ibtn, .tile .ibtn.on { opacity:1; }
+
+  .more { display:block; margin:16px auto; padding:10px 24px; }
+  .empty { text-align:center; color:var(--mute); padding:60px 0; }
+  footer { color:var(--mute); font-size:12px; text-align:center; padding:0 16px 24px; }
+  footer a { color:var(--mute); }
+
+  #toast { position:fixed; left:50%; bottom:70px; transform:translateX(-50%); background:var(--ok); color:#0c1a0c; padding:8px 16px; border-radius:20px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .15s; z-index:30; max-width:90vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #toast.show { opacity:1; }
+  #basket { position:fixed; left:0; right:0; bottom:0; z-index:20; background:#1d1a14; border-top:2px solid var(--acc); padding:10px 16px; display:none; }
+  #basket.show { display:block; }
+  #basket .row { margin:0 auto; }
+  #basket b { color:var(--acc); }
+  button.pri { background:var(--acc); color:#1a150a; border-color:var(--acc); font-weight:600; }
+  #preview { position:fixed; z-index:40; display:none; background:#0e0d0b; border:1px solid var(--acc); border-radius:8px; padding:8px; pointer-events:none; text-align:center; max-width:280px; }
+  #preview img { width:256px; height:256px; object-fit:contain; display:block; }
+  #preview div { font-size:12px; color:var(--text); margin-top:4px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <h1>KCD2 · предметы</h1>
+    <input id="q" type="search" placeholder="Поиск: название, фракция, UID или хэш…   ( / )" autofocus>
+    <select id="tag"><option value="">Все категории</option></select>
+    <div class="seg" id="viewseg">
+      <button data-view="list" title="Список">☰ Список</button>
+      <button data-view="gallery" title="Галерея">▦ Галерея</button>
+    </div>
+    <label class="chip"><input type="checkbox" id="showall"> лошади / документы</label>
+    <span class="stat" id="stat"></span>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-tab="items">Предметы</button>
+    <button class="tab" data-tab="sets">Сэты <span class="n" id="nsets"></span></button>
+    <button class="tab" data-tab="fav">Избранное <span class="n" id="nfav"></span></button>
+  </div>
+</header>
+<main id="list"></main>
+<footer>Данные: <a href="https://kingdomcomedeliverance.fandom.com/wiki/Module:ItemData" target="_blank" rel="noopener">Module:ItemData</a> вики Kingdom Come: Deliverance · собрано __BUILT__</footer>
+
+<div id="basket"><div class="row">
+  <span>Выбрано: <b id="bn">0</b></span>
+  <button class="pri" id="bcopy">Копировать хэши</button>
+  <button id="bclear">Очистить</button>
+  <span class="stat">по одному хэшу на строку</span>
+</div></div>
+<div id="toast"></div>
+<div id="preview"><img alt=""><div></div></div>
+
+<script>
+const ITEMS = /*__ITEMS__*/[];
+const WIKI = 'https://kingdomcomedeliverance.fandom.com/wiki/';
+const PAGE = 40;
+const HIDDEN_TAGS = new Set(['Horse', 'Document', 'ItemAlias']);
+const FAC_ALIAS = { Ruthart:'Ruthard', Ruhard:'Ruthard', Blacskmith:'Blacksmith', BergovCaptured:'Bergov' };
+const FAC_SKIP = new Set(['Pattern','NoDagger','NoBags','NoDaggerWithBags','Armor','Rings','Captured']);
+const $ = (s) => document.querySelector(s);
+const norm = (s) => s.toLowerCase().replace(/[’‘´`]/g, "'");
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+// ---------- состояние (localStorage, с защитой) ----------
+const KEY = 'kcd2items.v1';
+const S = { tab:'items', view:'list', q:'', tag:'', showall:false, fav:[], basket:[], recent:[] };
+try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+const fav = new Set(S.fav), basket = new Set(S.basket);
+const persist = () => { S.fav = [...fav]; S.basket = [...basket]; save(); };
+
+// ---------- подготовка данных ----------
+for (const it of ITEMS) {
+  let fac = '';
+  const m = it.u.match(/_m([A-Za-z]+)/);
+  if (m) { fac = FAC_ALIAS[m[1]] || m[1]; if (FAC_SKIP.has(fac)) fac = ''; }
+  it.fac = fac;
+  const num = it.u.match(/_m(\d+)/);
+  const fd = m && it.u.match(/_m[A-Za-z]+(\d+)/);
+  it.lab = fac ? fac + (fd ? ' ' + parseInt(fd[1], 10) : '')
+         : num ? 'Вариант ' + parseInt(num[1], 10)
+         : 'Базовый';
+  it.hid = HIDDEN_TAGS.has(it.t);
+  it.hay = norm(it.n + ' ' + it.u + ' ' + it.h + ' ' + fac);
+}
+const BY = new Map(ITEMS.map((i) => [i.h, i]));
+
+const groups = new Map();
+for (const it of ITEMS) {
+  const k = norm(it.n);
+  if (!groups.has(k)) groups.set(k, { name: it.n, items: [], tags: new Set() });
+  const g = groups.get(k); g.items.push(it); if (it.t) g.tags.add(it.t);
+}
+const ALL = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+for (const g of ALL) g.hay = g.items.map((i) => i.hay).join(' ');
+
+const facMap = new Map();
+for (const it of ITEMS) if (it.fac) { if (!facMap.has(it.fac)) facMap.set(it.fac, []); facMap.get(it.fac).push(it); }
+
+for (const t of [...new Set(ITEMS.map((i) => i.t).filter(Boolean))].sort())
+  $('#tag').insertAdjacentHTML('beforeend', `<option>${t}</option>`);
+
+// ---------- рендер ----------
+const visible = (it) => S.showall || !it.hid;
+let view = [], shown = 0, renderer = null;
+
+function actions(it) {
+  return `<button class="ibtn star ${fav.has(it.h) ? 'on' : ''}" data-act="fav" data-h="${it.h}" title="В избранное">${fav.has(it.h) ? '★' : '☆'}</button>` +
+         `<button class="ibtn chk ${basket.has(it.h) ? 'on' : ''}" data-act="sel" data-h="${it.h}" title="Добавить в набор">${basket.has(it.h) ? '✓' : '+'}</button>`;
+}
+function icon(it) {
+  return it.i
+    ? `<img class="ic" src="${esc(it.i)}" data-big="${esc(it.i.replace('/scale-to-width-down/96', '/scale-to-width-down/256'))}" data-h="${it.h}" loading="lazy" alt="" onerror="this.classList.add('miss')">`
+    : `<span class="ic noimg">?</span>`;
+}
+function rowHtml(it, showName) {
+  return `<div class="v ${basket.has(it.h) ? 'issel' : ''}" data-act="copy" data-h="${it.h}">
+    ${icon(it)}
+    <div class="info">
+      ${showName ? `<div class="nm" title="${esc(it.n)}">${esc(it.n)}</div>` : ''}
+      <div class="lab">${esc(it.lab)}<span class="uid">${esc(it.u)}</span></div>
+      <div class="hash">${it.h}</div>
+    </div>
+    <div class="btns">${actions(it)}</div>
+  </div>`;
+}
+function tileHtml(it, showName) {
+  return `<div class="tile ${basket.has(it.h) ? 'issel' : ''}" data-act="copy" data-h="${it.h}" title="${esc(it.n)} — ${esc(it.u)}">
+    ${actions(it)}${icon(it)}
+    <div class="tl">${esc(it.lab)}</div>
+    ${showName ? `<div class="tn">${esc(it.n)}</div>` : ''}
+  </div>`;
+}
+const itemsBlock = (arr, showName) => S.view === 'gallery'
+  ? `<div class="tiles">${arr.map((i) => tileHtml(i, showName)).join('')}</div>`
+  : `<div class="variants">${arr.map((i) => rowHtml(i, showName)).join('')}</div>`;
+
+function groupHtml(g) {
+  const arr = g.items.filter(visible);
+  const tag = [...g.tags][0] || '';
+  return `<section class="group">
+    <div class="gh"><b>${esc(g.name)}</b><span class="cnt">вариантов: ${arr.length}</span>
+      <span class="right"><a class="tag" href="${WIKI}${encodeURIComponent(g.name.replace(/ /g, '_'))}" target="_blank" rel="noopener">${esc(tag || 'вики')} ↗</a></span></div>
+    ${itemsBlock(arr, false)}</section>`;
+}
+
+function setHtml(s) {
+  const byName = new Map();
+  for (const it of s.items) { const k = norm(it.n); if (!byName.has(k)) byName.set(k, []); byName.get(k).push(it); }
+  const parts = [...byName.values()].sort((a, b) => a[0].n.localeCompare(b[0].n)).map((arr) =>
+    `<div class="sub">${esc(arr[0].n)}</div>${itemsBlock(arr, false)}`).join('');
+  return `<section class="group">
+    <div class="gh"><b>${esc(s.fac)}</b><span class="cnt">${byName.size} предм. · ${s.items.length} хэшей</span>
+      <span class="right">
+        <button data-act="setcopy" data-fac="${esc(s.fac)}">Копировать все хэши</button>
+        <button data-act="setadd" data-fac="${esc(s.fac)}">Всё в набор</button>
+      </span></div>${parts}</section>`;
+}
+
+function favHtml() {
+  const favs = [...fav].map((h) => BY.get(h)).filter(Boolean).sort((a, b) => a.n.localeCompare(b.n));
+  const rec = S.recent.map((h) => BY.get(h)).filter(Boolean);
+  let h = '';
+  h += `<section class="group"><div class="gh"><b>★ Избранное</b><span class="cnt">${favs.length}</span></div>` +
+       (favs.length ? itemsBlock(favs, true) : `<div class="empty">Нажмите ☆ у предмета, чтобы он появился здесь</div>`) + `</section>`;
+  h += `<section class="group"><div class="gh"><b>Недавно скопированные</b><span class="cnt">${rec.length}</span></div>` +
+       (rec.length ? itemsBlock(rec, true) : `<div class="empty">Пока пусто</div>`) + `</section>`;
+  return h;
+}
+
+function renderMore() {
+  const chunk = view.slice(shown, shown + PAGE);
+  $('#list').querySelector('.more')?.remove();
+  $('#list').insertAdjacentHTML('beforeend', chunk.map(renderer).join(''));
+  shown += chunk.length;
+  if (shown < view.length)
+    $('#list').insertAdjacentHTML('beforeend', `<button class="more">Показать ещё (${view.length - shown})</button>`);
+}
+
+function buildSets() {
+  const terms = norm(S.q).split(/\s+/).filter(Boolean);
+  const out = [];
+  for (const [fac, all] of facMap) {
+    const items = all.filter(visible);
+    if (new Set(items.map((i) => norm(i.n))).size < 2) continue;
+    const hay = norm(fac) + ' ' + items.map((i) => i.hay).join(' ');
+    if (terms.every((t) => hay.includes(t))) out.push({ fac, items });
+  }
+  return out.sort((a, b) => b.items.length - a.items.length);
+}
+
+function apply() {
+  const terms = norm(S.q).split(/\s+/).filter(Boolean);
+  $('#tag').style.display = S.tab === 'items' ? '' : 'none';
+  $('#list').innerHTML = '';
+  shown = 0;
+  document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === S.tab));
+  document.querySelectorAll('#viewseg button').forEach((b) => b.classList.toggle('on', b.dataset.view === S.view));
+  $('#nfav').textContent = fav.size || '';
+  $('#nsets').textContent = buildSetsCount();
+
+  if (S.tab === 'fav') {
+    $('#list').innerHTML = favHtml();
+    $('#stat').textContent = '';
+    return;
+  }
+  if (S.tab === 'sets') {
+    view = buildSets(); renderer = setHtml;
+    $('#stat').textContent = `${view.length} сэтов`;
+    $('#list').insertAdjacentHTML('beforeend', `<p class="hint">Сэт = предметы одной фракции/герба (по маркеру в UID: Leipa, Kuttenberg, Semin…). Копируйте все хэши сэта разом или добавляйте в набор.</p>`);
+  } else {
+    view = ALL.filter((g) => (!S.tag || g.tags.has(S.tag)) && g.items.some(visible) && terms.every((t) => g.hay.includes(t)));
+    renderer = groupHtml;
+    const n = view.reduce((s, g) => s + g.items.filter(visible).length, 0);
+    $('#stat').textContent = `${view.length} названий · ${n} хэшей`;
+  }
+  if (!view.length) $('#list').insertAdjacentHTML('beforeend', '<div class="empty">Ничего не найдено</div>');
+  else renderMore();
+}
+function buildSetsCount() {
+  let n = 0;
+  for (const all of facMap.values()) if (new Set(all.filter(visible).map((i) => norm(i.n))).size >= 2) n++;
+  return n;
+}
+
+// ---------- действия ----------
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = '✓ ' + msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1400);
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch { const t = document.createElement('textarea'); t.value = text; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+}
+function copyOne(h) {
+  copyText(h);
+  S.recent = [h, ...S.recent.filter((x) => x !== h)].slice(0, 24); save();
+  const it = BY.get(h);
+  toast(`${it ? it.n + ' · ' + it.lab : 'Хэш'} скопирован`);
+}
+function syncBasket() {
+  $('#bn').textContent = basket.size;
+  $('#basket').classList.toggle('show', basket.size > 0);
+  document.querySelectorAll('[data-h]').forEach((el) => {
+    if (el.dataset.act === 'copy') el.classList.toggle('issel', basket.has(el.dataset.h));
+    if (el.dataset.act === 'sel') { const on = basket.has(el.dataset.h); el.classList.toggle('on', on); el.textContent = on ? '✓' : '+'; }
+  });
+}
+function toggleFav(h) {
+  fav.has(h) ? fav.delete(h) : fav.add(h); persist();
+  if (S.tab === 'fav') return apply();
+  document.querySelectorAll(`[data-act="fav"][data-h="${h}"]`).forEach((el) => {
+    const on = fav.has(h); el.classList.toggle('on', on); el.textContent = on ? '★' : '☆';
+  });
+  $('#nfav').textContent = fav.size || '';
+}
+const setItems = (fac) => (facMap.get(fac) || []).filter(visible);
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.tag')) return;
+  const el = e.target.closest('[data-act], button');
+  if (!el) return;
+  if (el.classList.contains('more')) return renderMore();
+  if (el.classList.contains('tab')) { S.tab = el.dataset.tab; save(); return apply(); }
+  if (el.dataset.view) { S.view = el.dataset.view; save(); return apply(); }
+  if (el.id === 'bclear') { basket.clear(); persist(); return syncBasket(); }
+  if (el.id === 'bcopy') { copyText([...basket].join('\n')); return toast(`Скопировано хэшей: ${basket.size}`); }
+  const h = el.dataset.h;
+  switch (el.dataset.act) {
+    case 'copy': return copyOne(h);
+    case 'fav': return toggleFav(h);
+    case 'sel': basket.has(h) ? basket.delete(h) : basket.add(h); persist(); return syncBasket();
+    case 'setcopy': { const hs = setItems(el.dataset.fac).map((i) => i.h); copyText(hs.join('\n')); return toast(`Сэт ${el.dataset.fac}: скопировано хэшей ${hs.length}`); }
+    case 'setadd': setItems(el.dataset.fac).forEach((i) => basket.add(i.h)); persist(); syncBasket(); return toast(`В набор добавлено`);
+  }
+});
+
+// увеличенная иконка при наведении
+const pv = $('#preview');
+document.addEventListener('mouseover', (e) => {
+  const im = e.target.closest('img.ic'); if (!im || !im.dataset.big) return;
+  const it = BY.get(im.dataset.h);
+  pv.querySelector('img').src = im.dataset.big;
+  pv.querySelector('div').textContent = it ? `${it.n} — ${it.lab}` : '';
+  pv.style.display = 'block'; placePv(e);
+});
+document.addEventListener('mousemove', (e) => { if (pv.style.display === 'block') placePv(e); });
+document.addEventListener('mouseout', (e) => { if (e.target.closest && e.target.closest('img.ic')) pv.style.display = 'none'; });
+function placePv(e) {
+  const w = 280, h = 300;
+  let x = e.clientX + 18, y = e.clientY + 12;
+  if (x + w > innerWidth) x = e.clientX - w - 12;
+  if (y + h > innerHeight) y = Math.max(8, innerHeight - h - 8);
+  pv.style.left = x + 'px'; pv.style.top = y + 'px';
+}
+
+// поиск и клавиши
+const q = $('#q'); q.value = S.q;
+let timer; q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { S.q = q.value; save(); apply(); }, 120); });
+$('#tag').addEventListener('change', (e) => { S.tag = e.target.value; save(); apply(); });
+$('#showall').checked = S.showall;
+$('#showall').addEventListener('change', (e) => { S.showall = e.target.checked; save(); apply(); });
+$('#tag').value = S.tag;
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); q.select(); }
+  else if (e.key === 'Escape' && document.activeElement === q) { q.value = ''; S.q = ''; save(); apply(); }
+});
+
+syncBasket();
+apply();
+</script>
+</body>
+</html>
